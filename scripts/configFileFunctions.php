@@ -11,7 +11,7 @@ function getConnection($connectionURL, $db, $username, $password) {
 	}	catch (PDOException $e) {		
 		$result = array();			
 		array_push($result, array('result' => 'failure'));
-		array_push($result, "Error: " . $sql .  $e->getMessage());
+		array_push($result, "Error: " . $e->getMessage());
 		echo json_encode($result);		
 	}
 	return $conn;

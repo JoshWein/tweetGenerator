@@ -1,5 +1,5 @@
 <?php
-require_once 'configFileFunctions.php';
+include_once 'configFileFunctions.php';
 
 
 class UploadToDB {
@@ -13,7 +13,7 @@ class UploadToDB {
 			$tweetsFile = fopen("../data/onemiltweetsnew.txt", "r") or die("Could not open config file");
 			if ($tweetsFile) {
 				$count = 0;
-			    while (($line = trim(fgets($tweetsFile))) !== false) {	
+			    while (($line = fgets($tweetsFile)) !== false) {	
 			    	if (strpos($line, 'RT ') !== false || strpos($line, 'https://t') !== false || strpos($line, '@') !== false) {
 			    	} else {	
 			    		$line = str_replace('"',"",$line);	    	
@@ -34,19 +34,20 @@ class UploadToDB {
 								$stmt->execute();
 							}
 			    		}
+			    		// Keep count in the console to track progress
 			    		$count++;
-			    		if($count % 1000 == 0)
+			    		if($count % 1000 == 0) 
 			    			echo $count . " ";
 			    		if($count % 10000 == 0)
-			    			echo $count . "\n";
+			    			echo "\n";
 		    		}
 			    }
 			    fclose($tweetsFile);
 			} else {
 			    // error opening the file.
 			} 			
-		} catch (PDOException $e) {
-			echo "Error: " . $sql . "<br>" . $e->getMessage();
+		} catch (Exception $e) {
+			echo "Error: " . $e->getMessage();
 		}
 		echo "\n=====Done====\n";
 	}
@@ -54,5 +55,5 @@ class UploadToDB {
 }
 
 $obj = new UploadToDB();
-$obj->upload();
+// $obj->upload();
 ?>
