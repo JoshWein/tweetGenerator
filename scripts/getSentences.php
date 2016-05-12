@@ -5,7 +5,8 @@ class GetSentences {
 	function __construct() {}
 
 	/**
-	*	Returns a list of sentences containing 
+	*	Returns a list of sentences containing the given topic
+	*	@param	$topic	Topic to get sentences for
 	*/
 	function getSentences($topic) {
 		if(!isset($topic) || $topic == "")

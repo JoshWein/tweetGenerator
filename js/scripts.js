@@ -6,7 +6,7 @@ function generateSentence() {
 	if(isValidTopic(topic)) {
 		console.log("Getting sentences for: " + topic);
 		$.ajax({
-			url: "php/getSentences.php"
+			url: "scripts/getSentences.php"
 		});
 	} else {
 		console.log("Invalid entry");
