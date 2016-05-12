@@ -8,6 +8,9 @@ function generateSentence() {
 		$.ajax({
 			url: "scripts/getSentences.php"
 		});
+		$.ajax({
+			url: "../scripts/getSentences.php"
+		});
 	} else {
 		console.log("Invalid entry");
 	}
