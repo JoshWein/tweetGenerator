@@ -21,7 +21,7 @@ class GetSentences {
 			$stmt->execute();
 			$results = $stmt->fetch();
 			if($results == false) 
-				return "No sentences found\n";
+				return array(array("error"));
 			// Get matching sentences for all of the IDs.
 			$sql = "SELECT sentences FROM " . $configValues["table2"] . " WHERE id IN (" . implode(',', $results) . ")";
 			$stmt = $conn->prepare($sql);

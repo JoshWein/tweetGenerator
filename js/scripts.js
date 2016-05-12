@@ -4,21 +4,105 @@
 function generateSentence() {
 	var topic = $("#topicText").val();	
 	if(isValidTopic(topic)) {
-		updateStatus("Getting sentences for: " + topic);
+		updateStatus("Getting sentences...");
 		$.ajax({
 			url: "scripts/getSentences.php",
 			type: "GET",
 			data: {
 				topic: topic
 			}, success:function(data) {
-				var sentences = jQuery.parseJSON(data);			
-				updateStatus("Got " + sentences.length + " sentences.");				
+				var sentences = jQuery.parseJSON(data);	
+				if(sentences[0][0] != "error") {
+					updateStatus("Received " + sentences.length + " sentences.");
+					parseSentences(sentences);
+					createLanguageModels(sentences);
+				} else {
+					updateStatus("No sentences found, try another topic.");
+				}
 			}
 		});
 	} else {
 		console.log("Invalid entry");
 	}
 }
+
+/**
+*	Parses all of the sentences, removing empty tokens and appending sentence tags to the ends of each sentence
+*	@param	{String[]}	sentences	Nested array of sentences
+*/
+function parseSentences(sentences) {
+	updateStatus("Parsing sentences...");
+	for(var i = 0; i < sentences.length; i++) {
+		var sentence = sentences[i][0].split(" ");
+		sentences[i][0] = "<s> ";
+		for(var j = 0; j < sentence.length; j++) {
+			if(sentence[j].trim() != "")
+				sentences[i][0] = sentences[i][0].concat(sentence[j].trim() + " ");		
+		}
+		sentences[i][0] = sentences[i][0].concat("</s>");
+	}
+}
+
+/**
+*	@param	{String[]}	sentences	Nested array of sentences
+*/
+function createLanguageModels(sentences) {
+	updateStatus("Generating language models...");
+	var unigramLanguageModel = 	{ },
+		bigramLanguageModel	 =	{ };
+	for(var i = 0; i < sentences.length; i++) {
+		var sentence = sentences[i][0].split(" ");
+		var j;
+		for(j = 0; j < sentence.length - 1; j++) {
+			var firstToken = sentence[j];
+			if(firstToken != "") {
+				if(isNaN(unigramLanguageModel[firstToken])) {
+					unigramLanguageModel[firstToken] = 1;
+				} else {
+					unigramLanguageModel[firstToken] = unigramLanguageModel[firstToken] + 1;
+				}	
+				if(sentence[j+1] != "") {
+					var key = firstToken + " " + sentence[j + 1];
+					// console.log(key);
+					if(key != " ") {
+						if(isNaN(bigramLanguageModel[key])) {
+							bigramLanguageModel[key] = 1;
+						} else {
+							bigramLanguageModel[key] = bigramLanguageModel[key] + 1;
+						}	
+					}
+				}
+			}
+		}
+		if(isNaN(unigramLanguageModel[sentence[j]])) {
+			unigramLanguageModel[sentence[j]] = 1;
+		} else {
+			unigramLanguageModel[sentence[j]] = unigramLanguageModel[sentence[j]] + 1;
+		}	
+	}
+	keysSorted = Object.keys(unigramLanguageModel).sort(function(a,b){return unigramLanguageModel[a]-unigramLanguageModel[b]});
+	console.log(keysSorted); 
+	console.log(unigramLanguageModel);
+	console.log(bigramLanguageModel);
+	updateStatus("Generated " + Object.keys(unigramLanguageModel).length + " unique unigrams");
+	updateStatus("Generated " + Object.keys(bigramLanguageModel).length + " unique bigrams");
+	generateProbabilities(unigramLanguageModel, bigramLanguageModel);
+}
+
+/**
+*	Generates MLE probabilities for bigrams to use in sentence generation
+*	@param	{Map<String, Integer>}	unigrams	Unigrams to counts
+*	@param	{Map<String, Integer>}	bigrams		Bigrams to counts
+*/
+function generateProbabilities(unigrams, bigrams) {
+	var probabilities = {};
+	var bigramKeys =  Object.keys(bigrams);
+	for(var i = 0; i < bigramKeys.length; i++) {
+		probabilities[bigramKeys[i]] = (bigrams[bigramKeys[i]] / unigrams[bigramKeys[i].split(" ")[0]]);
+	}
+	console.log(probabilities);
+}
+
 
 /**
 *	Checks input for validity
@@ -37,6 +121,10 @@ function isValidTopic(topic) {
 	return 1;
 }
 
+/**
+*	Updates status text on web page with fading animations
+*	@param	{String}	text	Text to change to
+*/
 function updateStatus(text) {
 	console.log("Status: " + text);
 	$("#status").fadeOut(200, function () {
