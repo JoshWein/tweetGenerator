@@ -34,8 +34,8 @@ class GetSentences {
 		}
 	}
 }
-
+// echo "running\n";
 $obj = new GetSentences();
-$response = $obj->getSentences("asian");
-var_dump($response);
+$response = $obj->getSentences($_GET['topic']);
+echo(json_encode($response));
 ?>

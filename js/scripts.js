@@ -4,12 +4,16 @@
 function generateSentence() {
 	var topic = $("#topicText").val();	
 	if(isValidTopic(topic)) {
-		console.log("Getting sentences for: " + topic);
+		updateStatus("Getting sentences for: " + topic);
 		$.ajax({
-			url: "scripts/getSentences.php"
-		});
-		$.ajax({
-			url: "../scripts/getSentences.php"
+			url: "scripts/getSentences.php",
+			type: "GET",
+			data: {
+				topic: topic
+			}, success:function(data) {
+				var sentences = jQuery.parseJSON(data);			
+				updateStatus("Got " + sentences.length + " sentences.");				
+			}
 		});
 	} else {
 		console.log("Invalid entry");
@@ -32,3 +36,17 @@ function isValidTopic(topic) {
 	}
 	return 1;
 }
+
+function updateStatus(text) {
+	console.log("Status: " + text);
+	$("#status").fadeOut(200, function () {
+		document.getElementById("status").innerHTML = text;
+		$("#status").fadeIn(200);
+	});	
+}
+// Submits word on enter key press
+$("#topicText").bind('keyup', function(event) {
+	if(event.keyCode == 13){ 
+		generateSentence();
+	}
+});
