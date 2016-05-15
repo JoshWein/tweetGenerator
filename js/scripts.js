@@ -1,8 +1,10 @@
+var topic;
 /**
 *	Starting routine for generating a random sentence
 */
 function start() {
-	var topic = $("#topicText").val();	
+	switchView();
+	topic = $("#topicText").val();	
 	if(isValidTopic(topic)) {
 		updateStatus("Getting sentences...");
 		$.ajax({
@@ -113,24 +115,27 @@ function generateSentence(bigrams, probabilities) {
 	updateStatus("Generating sentence...");
 	var list = Object.keys(bigrams);
 	console.log(list);
-	var choices = getTagList("<s>", list);
-	console.log(choices);
-	var sentence = "";
-	var safetyCounter = 0;
-	while(!sentence.includes("</s>")) {
-		sentence += chooseTag(choices, probabilities);
-		// Update choices using the last word in the sentence as a tag
-		var lastWord = sentence.split(" ").splice(-1)[0];
-		console.log(lastWord);
-		choices = getTagList(lastWord, list);
-		console.log(choices);
-		// Infinite loop protection
-		if(safetyCounter > 20) {
-			break;
+	var sentence = "", safetyCounter;
+	while(!sentence.toUpperCase().includes(topic.toUpperCase()) || !sentence.includes("</s>")) {
+		sentence = "";
+		safetyCounter = 0;
+		var choices = getTagList("<s>", list);
+		// console.log(choices);		
+		while(!sentence.includes("</s>")) {
+			sentence += chooseTag(choices, probabilities);
+			// Update choices using the last word in the sentence as a tag
+			var lastWord = sentence.split(" ").splice(-1)[0];
+			choices = getTagList(lastWord, list);
+			// Infinite loop protection
+			if(safetyCounter > 25) {
+				break;
+			}
+			safetyCounter++;
 		}
-		safetyCounter++;
+		console.log(sentence);
 	}
-	console.log(sentence);
+	sentence = sentence.replace("</s>", "");
+	updateStatus(sentence);
 }
 
 /**
@@ -139,8 +144,7 @@ function generateSentence(bigrams, probabilities) {
 *	@param	{String[]} 	list	List of strings
 */
 function getTagList(tag, list) {
-	console.log("Matching for " + tag.trim());
-	console.log(list);
+	// console.log("Matching for " + tag.trim());
 	var choices = [];
 	for(var i = 0; i < list.length; i++) {
 		if(list[i].split(' ')[0].trim() === tag.trim()) {
@@ -154,7 +158,24 @@ function getTagList(tag, list) {
 *
 */
 function chooseTag(choices, probabilities) {
-	return choices[0].replace(choices[0].split(' ')[0], "");
+	var randomness = .000005;
+	var choiceMap = {}, i, j, table = [];
+	for(var i = 0; i < choices.length; i++) {
+		if(probabilities[choices[i]] > randomness) {
+			choiceMap[choices[i]] = probabilities[choices[i]];
+		} else {
+			console.log(choices[i]);
+			console.log(probabilities[choices[i]]);
+		}
+	}
+	// Rejection Sampling 	
+	for (i in choiceMap) {
+		for (j = 0; j < (choiceMap[i] * 10); j++) {
+		  table.push(i);
+		}
+	}
+	var choice = table[Math.floor(Math.random() * table.length)];
+	return choice.replace(choice.split(' ')[0], "");
 }
 
 /**
@@ -185,9 +206,14 @@ function updateStatus(text) {
 		$("#status").fadeIn(200);
 	});	
 }
+
 // Submits word on enter key press
 $("#topicText").bind('keyup', function(event) {
 	if(event.keyCode == 13){ 
 		start();
 	}
 });
+
+function switchView() {
+	$("inputForm").fadeOut(100);
+}
