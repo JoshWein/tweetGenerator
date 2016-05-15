@@ -135,7 +135,7 @@ function generateSentence(bigrams, probabilities) {
 		console.log(sentence);
 	}
 	sentence = sentence.replace("</s>", "");
-	updateStatus(sentence);
+	showSentence(sentence);
 }
 
 /**
@@ -199,15 +199,12 @@ function isValidTopic(topic) {
 *	Updates status text on web page with fading animations
 *	@param	{String}	text	Text to change to
 */
-var count = 0;
+var currentStatus = 0;
 function updateStatus(text) {
-	console.log("Status: " + text);
-	$("#status" + count).after('<div id="status'+ ++count + '" style="display: none">'+ text+ '</div>');
-	$("#status" + count).fadeIn(1200);
-	// $("#status").fadeOut(200, function () {
-	// 	document.getElementById("status").innerHTML = text;
-	// 	$("#status").fadeIn(200);
-	// });	
+	var str = "status" + currentStatus++;
+	console.log("Status: " + text + " " + str);	
+	$("#status" + currentStatus).html(text);
+	$("#status" + currentStatus).delay(currentStatus * 700).fadeIn(3000);
 }
 
 // Submits word on enter key press
@@ -220,4 +217,21 @@ $("#topicText").bind('keyup', function(event) {
 function switchView() {
 	$("#inputForm").fadeOut(100);
 	$("#statusSection").fadeIn(100);
+}
+
+function showSentence(sentence) {
+	$("#sentenceSection").show();
+	$("#sentence").html(sentence);
+	$("#sentence").delay(currentStatus * 700).fadeIn(3500);
+}
+
+function regenerate() {
+	$("#statusSection").hide();
+	$("#sentence").html("");
+	$("#sentence").hide();
+	for(var i = 0; i < 8; i++) {
+		$("#status" + i).html("");
+	}
+	currentStatus = 0;
+	start();
 }
