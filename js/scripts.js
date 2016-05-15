@@ -220,18 +220,32 @@ function switchView() {
 }
 
 function showSentence(sentence) {
+	$("#buttons").hide();
 	$("#sentenceSection").show();
 	$("#sentence").html(sentence);
-	$("#sentence").delay(currentStatus * 700).fadeIn(3500);
+	$("#sentence").delay(currentStatus * 700).fadeIn(3000, function() {
+		$("#buttons").show();
+	});
 }
 
 function regenerate() {
+	reset();
+	start();
+}
+
+function newTopic() {
+	reset();
+	$("#inputForm").show();
+}
+
+function reset() {
 	$("#statusSection").hide();
 	$("#sentence").html("");
 	$("#sentence").hide();
 	for(var i = 0; i < 8; i++) {
+		$("#status" + i).hide();
 		$("#status" + i).html("");
 	}
 	currentStatus = 0;
-	start();
+	$("#buttons").hide();
 }
