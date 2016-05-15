@@ -6,6 +6,7 @@ class UploadToDB {
 
 	function __construct() {}
 
+	// Script for uploading all of the tweets to the database
 	function upload(){
 		$configValues = getConfigValues("../configs/config.txt");
 		try {
@@ -13,18 +14,23 @@ class UploadToDB {
 			$tweetsFile = fopen("../data/onemiltweetsnew.txt", "r") or die("Could not open config file");
 			if ($tweetsFile) {
 				$count = 0;
-			    while (($line = fgets($tweetsFile)) !== false) {	
+			    while (($line = fgets($tweetsFile)) !== false) {
+			    	// 	skipped certain kinds of tweets
 			    	if (strpos($line, 'RT ') !== false || strpos($line, 'https://t') !== false || strpos($line, '@') !== false) {
-			    	} else {	
-			    		$line = str_replace('"',"",$line);	    	
-				        $sql = "INSERT INTO " . $configValues["table2"]. " (sentences) VALUES (:line)";			        			        
+			    	} else {
+			    		$line = str_replace('"',"",$line);
+			    		// START sentence insert
+				        $sql = "INSERT INTO " . $configValues["table2"]. " (sentences) VALUES (:line)";
 						$stmt = $conn->prepare($sql);
 						$stmt->bindParam(":line", $line);
 						$stmt->execute();
+						// END sentence insert
+						// Get id of sentence we just added so we can map the words to the sentence in a different table
 						$sql = "SELECT LAST_INSERT_ID()";
 						$stmt = $conn->prepare($sql);
 						$stmt->execute();
 						$sentenceID = $stmt->fetch()[0];
+						// Split on whitespace to get list of words
 						$words = preg_split("/[^\w]*([\s]+[^\w]*|$)/", $line, -1, PREG_SPLIT_NO_EMPTY);
 			    		foreach($words as $word) {
 			    			if(strlen($word) < 70) {
@@ -55,5 +61,6 @@ class UploadToDB {
 }
 
 $obj = new UploadToDB();
+// Run script
 // $obj->upload();
 ?>

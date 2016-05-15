@@ -1,7 +1,7 @@
 /**
-*	Main routine for generating a random sentence
+*	Starting routine for generating a random sentence
 */
-function generateSentence() {
+function start() {
 	var topic = $("#topicText").val();	
 	if(isValidTopic(topic)) {
 		updateStatus("Getting sentences...");
@@ -14,8 +14,7 @@ function generateSentence() {
 				var sentences = jQuery.parseJSON(data);	
 				if(sentences[0][0] != "error") {
 					updateStatus("Received " + sentences.length + " sentences.");
-					parseSentences(sentences);
-					createLanguageModels(sentences);
+					parseSentences(sentences);					
 				} else {
 					updateStatus("No sentences found, try another topic.");
 				}
@@ -41,6 +40,7 @@ function parseSentences(sentences) {
 		}
 		sentences[i][0] = sentences[i][0].concat("</s>");
 	}
+	createLanguageModels(sentences);
 }
 
 /**
@@ -91,18 +91,71 @@ function createLanguageModels(sentences) {
 
 /**
 *	Generates MLE probabilities for bigrams to use in sentence generation
-*	@param	{Map<String, Integer>}	unigrams	Unigrams to counts
-*	@param	{Map<String, Integer>}	bigrams		Bigrams to counts
+*	@param	{Map<String, Integer>}	unigrams	Map of unigrams to counts
+*	@param	{Map<String, Integer>}	bigrams		Map of bigrams to counts
 */
 function generateProbabilities(unigrams, bigrams) {
 	var probabilities = {};
 	var bigramKeys =  Object.keys(bigrams);
 	for(var i = 0; i < bigramKeys.length; i++) {
+		// count(bigram) / count(unigram)
 		probabilities[bigramKeys[i]] = (bigrams[bigramKeys[i]] / unigrams[bigramKeys[i].split(" ")[0]]);
 	}
 	console.log(probabilities);
+	generateSentence(bigrams, probabilities)
 }
 
+/**
+*	@param	{Map<String, Integer>}	bigrams		Map of bigrams to counts
+*	@param	{Map<String, Double>}	probabilities
+*/
+function generateSentence(bigrams, probabilities) {
+	updateStatus("Generating sentence...");
+	var list = Object.keys(bigrams);
+	console.log(list);
+	var choices = getTagList("<s>", list);
+	console.log(choices);
+	var sentence = "";
+	var safetyCounter = 0;
+	while(!sentence.includes("</s>")) {
+		sentence += chooseTag(choices, probabilities);
+		// Update choices using the last word in the sentence as a tag
+		var lastWord = sentence.split(" ").splice(-1)[0];
+		console.log(lastWord);
+		choices = getTagList(lastWord, list);
+		console.log(choices);
+		// Infinite loop protection
+		if(safetyCounter > 20) {
+			break;
+		}
+		safetyCounter++;
+	}
+	console.log(sentence);
+}
+
+/**
+*	Gets all n grams with a matching first gram
+*	@param	{String}				tag		String to match
+*	@param	{String[]} 	list	List of strings
+*/
+function getTagList(tag, list) {
+	console.log("Matching for " + tag.trim());
+	console.log(list);
+	var choices = [];
+	for(var i = 0; i < list.length; i++) {
+		if(list[i].split(' ')[0].trim() === tag.trim()) {
+			choices.push(list[i]);
+		}
+	}
+	return choices;
+}
+
+/**
+*
+*/
+function chooseTag(choices, probabilities) {
+	return choices[0].replace(choices[0].split(' ')[0], "");
+}
 
 /**
 *	Checks input for validity
@@ -135,6 +188,6 @@ function updateStatus(text) {
 // Submits word on enter key press
 $("#topicText").bind('keyup', function(event) {
 	if(event.keyCode == 13){ 
-		generateSentence();
+		start();
 	}
 });
