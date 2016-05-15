@@ -1,11 +1,12 @@
-var topic;
+var topic, randomValue = 0.0005;
 /**
 *	Starting routine for generating a random sentence
 */
-function start() {
-	switchView();
+function start() {	
+	console.log(randomValue*.00001);
 	topic = $("#topicText").val();	
 	if(isValidTopic(topic)) {
+		switchView();
 		updateStatus("Getting sentences...");
 		$.ajax({
 			url: "scripts/getSentences.php",
@@ -15,7 +16,7 @@ function start() {
 			}, success:function(data) {
 				var sentences = jQuery.parseJSON(data);	
 				if(sentences[0][0] != "error") {
-					updateStatus("Received " + sentences.length + " sentences.");
+					updateStatus("Received " + sentences.length + " sentences...");
 					parseSentences(sentences);					
 				} else {
 					updateStatus("No sentences found, try another topic.");
@@ -127,7 +128,7 @@ function generateSentence(bigrams, probabilities) {
 			var lastWord = sentence.split(" ").splice(-1)[0];
 			choices = getTagList(lastWord, list);
 			// Infinite loop protection
-			if(safetyCounter > 25) {
+			if(safetyCounter > 30) {
 				break;
 			}
 			safetyCounter++;
@@ -135,7 +136,7 @@ function generateSentence(bigrams, probabilities) {
 		console.log(sentence);
 	}
 	sentence = sentence.replace("</s>", "");
-	showSentence(sentence);
+	showSentence(sentence);	
 }
 
 /**
@@ -158,21 +159,26 @@ function getTagList(tag, list) {
 *
 */
 function chooseTag(choices, probabilities) {
-	var randomness = .000005;
+	var randomness = randomValue *.00001;
+	console.log("Starting from: " + randomness);
 	var choiceMap = {}, i, j, table = [];
-	for(var i = 0; i < choices.length; i++) {
-		if(probabilities[choices[i]] > randomness) {
-			choiceMap[choices[i]] = probabilities[choices[i]];
-		} else {
-			console.log(choices[i]);
-			console.log(probabilities[choices[i]]);
+	while(table.length == 0) {
+		for(var i = 0; i < choices.length; i++) {
+			if(probabilities[choices[i]] > randomness) {
+				choiceMap[choices[i]] = probabilities[choices[i]];
+			} else {
+				// console.log(choices[i]);
+				// console.log(probabilities[choices[i]]);
+			}
 		}
-	}
-	// Rejection Sampling 	
-	for (i in choiceMap) {
-		for (j = 0; j < (choiceMap[i] * 10); j++) {
-		  table.push(i);
+		// Rejection Sampling 	
+		for (i in choiceMap) {
+			for (j = 0; j < (choiceMap[i] * 10); j++) {
+			  table.push(i);
+			}
 		}
+		randomness *= .1; // to stop infinite loops
+		console.log("backing to: " + randomness);
 	}
 	var choice = table[Math.floor(Math.random() * table.length)];
 	return choice.replace(choice.split(' ')[0], "");
@@ -186,6 +192,9 @@ function chooseTag(choices, probabilities) {
 function isValidTopic(topic) {
 	// Only accept single words
 	if(topic.split(" ").length > 1) {
+		$("#err").stop().show();
+		$("#err").html("Only one word topics allowed");
+		$("#err").delay(1000).fadeOut(1000);	
 		return 0;
 	}
 	// Only accept non-empty words and words shorter than 50 characters
@@ -202,7 +211,7 @@ function isValidTopic(topic) {
 var currentStatus = 0;
 function updateStatus(text) {
 	var str = "status" + currentStatus++;
-	console.log("Status: " + text + " " + str);	
+	console.log("Status: " + text);	
 	$("#status" + currentStatus).html(text);
 	$("#status" + currentStatus).delay(currentStatus * 550).fadeIn(2700);
 }

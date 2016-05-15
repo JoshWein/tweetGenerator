@@ -24,8 +24,17 @@
 				<div class="row">
 					<button type="button" class="btn btn-default" style="width: 100%" onclick="start()">Generate Tweet</button>
 				</div>
+				<div class="row text-center">
+					<h4>Randomness</h4>
+					<input type="range" id="rangeinput" min="0" value="50" max="500" onchange="randomValue=500-value"/>
+				</div>
 			</div>
-			<div id="statusSection" style="display: none">
+			<div id="errorSection">
+				<div class="row">
+					<h3 id="err"></h3>
+				</div>
+			</div>
+			<div id="statusSection" class="text-center" style="display: none">
 				<div class="row">
 					<h2 id="statusTitle">Status</h2>
 					<h3 id="status0" style="display: none"></h3>					
