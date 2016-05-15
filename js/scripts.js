@@ -204,7 +204,7 @@ function updateStatus(text) {
 	var str = "status" + currentStatus++;
 	console.log("Status: " + text + " " + str);	
 	$("#status" + currentStatus).html(text);
-	$("#status" + currentStatus).delay(currentStatus * 700).fadeIn(3000);
+	$("#status" + currentStatus).delay(currentStatus * 550).fadeIn(2700);
 }
 
 // Submits word on enter key press
@@ -223,7 +223,7 @@ function showSentence(sentence) {
 	$("#buttons").hide();
 	$("#sentenceSection").show();
 	$("#sentence").html(sentence);
-	$("#sentence").delay(currentStatus * 700).fadeIn(3000, function() {
+	$("#sentence").delay(currentStatus * 800).fadeIn(3000, function() {
 		$("#buttons").show();
 	});
 }
