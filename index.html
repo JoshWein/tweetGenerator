@@ -11,22 +11,28 @@
 	<div class="container-fluid">
 		<div id="wrapper">
 			<div class="row text-center">
-				<div class="col-md-12">
+				<div class="col-sm-12 col-md-offset-3 col-md-6">
 					<h1>NLP Sentence Generator</h1>				
 				</div>
 			</div>
 			<div id="inputForm">
 				<div class="row">
+				<div class="col-sm-12 col-md-offset-3 col-md-6">
 					<div class="form-group">
-						<input class="form-control" id="topicText" placeholder="Topic" autocomplete="off">
+						<input class="form-control" id="topicText" placeholder="Topic" autocomplete="off" style="width: 100%">
+					</div>
 					</div>
 				</div>
 				<div class="row">
+				<div class="col-sm-12 col-md-offset-3 col-md-6">
 					<button type="button" class="btn btn-default" style="width: 100%" onclick="start()">Generate Tweet</button>
+					</div>
 				</div>
 				<div class="row text-center">
+				<div class="col-sm-12 col-md-offset-3 col-md-6">
 					<h4>Randomness</h4>
 					<input type="range" id="rangeinput" min="0" value="500" max="500" onchange="randomValue=500-value"/>
+					</div>
 				</div>
 			</div>
 			<div id="errorSection">
@@ -49,11 +55,15 @@
 			</div>
 			<div id="sentenceSection" style="display: none">
 				<div class="row">
+				<div class="col-sm-12 col-md-offset-3 col-md-6">
 					<h2 id="sentence" style="display: none"></h2>
+					</div>
 				</div>
 				<div class="row" id="buttons">
+				<div class="col-sm-12 col-md-offset-3 col-md-6">
 					<button type="button" class="btn btn-default" style="width: 100%" onclick="regenerate()">Regenerate</button>
 					<button type="button" class="btn btn-default" style="width: 100%" onclick="newTopic()">Choose New Topic</button>
+					</div>
 				</div>
 			</div>
 		</div>
