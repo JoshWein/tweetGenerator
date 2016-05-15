@@ -34,7 +34,8 @@ function getConfigValues($configLocation) {
 	if(!file_exists($configLocation)) {
 		$result = array();			
 		array_push($result, array('result' => 'failure'));
-		array_push($result, array('message' => 'file not found at ' . $configLocation));		
+		array_push($result, array('message' => 'file not found at ' . $configLocation));
+		echo 		json_encode($result);
 		return json_encode($result);
 	}
 	$configFile = fopen($configLocation, "r") or die("Could not open config file");
