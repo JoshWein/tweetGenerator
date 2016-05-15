@@ -13,7 +13,7 @@ class GetSentences {
 			return null;
 		try {
 			$configValues = getConfigValues("../info/info.txt");
-			$conn = getConnection("", "", "", "");
+			$conn = getConnection($configValues["connectionURL"], $configValues["db"], $configValues["username"], $configValues["password"]);
 			// Get list of sentence IDs for that topic
 			$sql = "SELECT sentences FROM " . $configValues["table1"] . " WHERE topics = (:topic)";
 			$stmt = $conn->prepare($sql);

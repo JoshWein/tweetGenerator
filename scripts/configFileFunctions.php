@@ -10,8 +10,8 @@ define('DB_NAME', getenv('OPENSHIFT_GEAR_NAME'));
 */
 function getConnection($connectionURL, $db, $username, $password) {	
 	try {
-		$dsn = 'mysql:dbname='.DB_NAME.';host='.DB_HOST.';port='.DB_PORT . ';dbname=data';
-		$conn = new PDO($dsn, DB_USER, DB_PASS);
+		$dsn = 'mysql:dbname='.DB_NAME.';host='.DB_HOST.';port='.DB_PORT . ';dbname=$db';
+		$conn = new PDO($dsn, DB_USER, DB_PASS, DB_USER, DB_PASS);
 		$conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 		$conn->setAttribute(PDO::ATTR_EMULATE_PREPARES, 1);
 	}	catch (PDOException $e) {		
@@ -34,9 +34,8 @@ function getConfigValues($configLocation) {
 	if(!file_exists($configLocation)) {
 		$result = array();			
 		array_push($result, array('result' => 'failure'));
-		array_push($result, array('message' => 'file not found at ' . $configLocation));
-		echo 		json_encode($result);
-		return json_encode($result);
+		echo json_encode($result);		
+		return;
 	}
 	$configFile = fopen($configLocation, "r") or die("Could not open config file");
 	$configValues = array(
