@@ -3,7 +3,6 @@ var topic, randomValue = 0.0005;
 *	Starting routine for generating a random sentence
 */
 function start() {	
-	console.log(randomValue*.00001);
 	topic = $("#topicText").val();	
 	if(isValidTopic(topic)) {
 		switchView();
@@ -20,6 +19,10 @@ function start() {
 					parseSentences(sentences);					
 				} else {
 					updateStatus("No sentences found, try another topic.");
+					$("#statusSection").delay(5000).fadeOut(200, function() {
+						console.log("tick");
+						newTopic();
+					});
 				}
 			}
 		});
@@ -160,7 +163,6 @@ function getTagList(tag, list) {
 */
 function chooseTag(choices, probabilities) {
 	var randomness = randomValue *.00001;
-	console.log("Starting from: " + randomness);
 	var choiceMap = {}, i, j, table = [];
 	while(table.length == 0) {
 		for(var i = 0; i < choices.length; i++) {
@@ -178,7 +180,6 @@ function chooseTag(choices, probabilities) {
 			}
 		}
 		randomness *= .1; // to stop infinite loops
-		console.log("backing to: " + randomness);
 	}
 	var choice = table[Math.floor(Math.random() * table.length)];
 	return choice.replace(choice.split(' ')[0], "");
