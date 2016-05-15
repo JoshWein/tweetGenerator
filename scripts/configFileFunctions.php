@@ -1,11 +1,16 @@
 <?php
 
+define('DB_HOST', getenv('OPENSHIFT_MYSQL_DB_HOST'));
+define('DB_PORT', getenv('OPENSHIFT_MYSQL_DB_PORT'));
+define('DB_USER', getenv('OPENSHIFT_MYSQL_DB_USERNAME'));
+define('DB_PASS', getenv('OPENSHIFT_MYSQL_DB_PASSWORD'));
+define('DB_NAME', getenv('OPENSHIFT_GEAR_NAME'));
 /*
 *	Creates a connection with the database.
 */
 function getConnection($connectionURL, $db, $username, $password) {	
 	try {
-		$conn = new PDO("mysql:host=$connectionURL;port=3307;dbname=$db", $username, $password);
+		$conn = new PDO("mysql:host=DB_HOST;port=DB_PORT;dbname=$db", DB_USER, DB_PASS);
 		$conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 		$conn->setAttribute(PDO::ATTR_EMULATE_PREPARES, 1);
 	}	catch (PDOException $e) {		
