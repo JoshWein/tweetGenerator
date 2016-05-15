@@ -12,7 +12,7 @@ class GetSentences {
 		if(!isset($topic) || $topic == "")
 			return null;
 		try {
-			$configValues = getConfigValues("../configs/config.txt");
+			$configValues = getConfigValues("../info/info.txt");
 			$conn = getConnection("", "", "", "");
 			// Get list of sentence IDs for that topic
 			$sql = "SELECT sentences FROM " . $configValues["table1"] . " WHERE topics = (:topic)";

@@ -1,0 +1,6 @@
+192.168.56.1
+root
+rooty
+data
+topics
+sentences
