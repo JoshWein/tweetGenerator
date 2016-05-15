@@ -11,7 +11,7 @@ define('DB_NAME', getenv('OPENSHIFT_GEAR_NAME'));
 function getConnection($connectionURL, $db, $username, $password) {	
 	try {
 		$dsn = 'mysql:dbname='.DB_NAME.';host='.DB_HOST.';port='.DB_PORT . ';dbname=$db';
-		$conn = new PDO($dsn, DB_USER, DB_PASS, DB_USER, DB_PASS);
+		$conn = new PDO($dsn, DB_USER, DB_PASS);
 		$conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 		$conn->setAttribute(PDO::ATTR_EMULATE_PREPARES, 1);
 	}	catch (PDOException $e) {		
