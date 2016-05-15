@@ -13,7 +13,7 @@ class GetSentences {
 			return null;
 		try {
 			$configValues = getConfigValues("../configs/config.txt");
-			$conn = getConnection();
+			$conn = getConnection("", "", "", "");
 			// Get list of sentence IDs for that topic
 			$sql = "SELECT sentences FROM " . $configValues["table1"] . " WHERE topics = (:topic)";
 			$stmt = $conn->prepare($sql);
