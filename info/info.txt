@@ -1,6 +1,6 @@
-192.168.56.1
-root
-rooty
+nerp
+nerp
+nerp
 data
 topics
 sentences

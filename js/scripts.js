@@ -199,12 +199,15 @@ function isValidTopic(topic) {
 *	Updates status text on web page with fading animations
 *	@param	{String}	text	Text to change to
 */
+var count = 0;
 function updateStatus(text) {
 	console.log("Status: " + text);
-	$("#status").fadeOut(200, function () {
-		document.getElementById("status").innerHTML = text;
-		$("#status").fadeIn(200);
-	});	
+	$("#status" + count).after('<div id="status'+ ++count + '" style="display: none">'+ text+ '</div>');
+	$("#status" + count).fadeIn(1200);
+	// $("#status").fadeOut(200, function () {
+	// 	document.getElementById("status").innerHTML = text;
+	// 	$("#status").fadeIn(200);
+	// });	
 }
 
 // Submits word on enter key press
@@ -215,5 +218,6 @@ $("#topicText").bind('keyup', function(event) {
 });
 
 function switchView() {
-	$("inputForm").fadeOut(100);
+	$("#inputForm").fadeOut(100);
+	$("#statusSection").fadeIn(100);
 }

@@ -15,17 +15,20 @@
 					<h1>NLP Sentence Generator</h1>				
 				</div>
 			</div>
-			<div class="row">
-				<div class="form-group">
-					<input class="form-control" id="topicText" placeholder="Topic">
+			<div id="inputForm">
+				<div class="row">
+					<div class="form-group">
+						<input class="form-control" id="topicText" placeholder="Topic" autocomplete="off">
+					</div>
+				</div>
+				<div class="row">
+					<button type="button" class="btn btn-default" style="width: 100%" onclick="start()">Generate Tweet</button>
 				</div>
 			</div>
-			<div class="row">
-				<button type="button" class="btn btn-default" style="width: 100%" onclick="start()">Generate Tweet</button>
-			</div>
-			<div class="row">
-				<div>
-					<div id="status"></div>
+			<div id="statusSection" style="display: none">
+				<div class="row">
+					<h2 id="statusTitle">Status</h2>
+					<div id="status0"></div>					
 				</div>
 			</div>
 		</div>
