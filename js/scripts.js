@@ -3,6 +3,7 @@ var topic, randomValue = 0.0005;
 *	Starting routine for generating a random sentence
 */
 function start() {	
+	console.log($('input[name=options]:checked', '#ngramRadio').val());
 	topic = $("#topicText").val();	
 	if(isValidTopic(topic)) {
 		switchView();
