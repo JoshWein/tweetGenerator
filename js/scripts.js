@@ -69,7 +69,6 @@ function createLanguageModels(sentences) {
 				}	
 				if(sentence[j+1] != "") {
 					var key = firstToken + " " + sentence[j + 1];
-					// console.log(key);
 					if(key != " ") {
 						if(isNaN(bigramLanguageModel[key])) {
 							bigramLanguageModel[key] = 1;
@@ -111,6 +110,9 @@ function generateProbabilities(unigrams, bigrams) {
 	generateSentence(bigrams, probabilities)
 }
 
+// Whether or not to filter check the sentence.
+var filterCheck = true;
+
 /**
 *	@param	{Map<String, Integer>}	bigrams		Map of bigrams to counts
 *	@param	{Map<String, Double>}	probabilities
@@ -119,8 +121,8 @@ function generateSentence(bigrams, probabilities) {
 	updateStatus("Generating sentence...");
 	var list = Object.keys(bigrams);
 	console.log(list);
-	var sentence = "", safetyCounter;
-	while(!sentence.toUpperCase().includes(topic.toUpperCase()) || !sentence.includes("</s>")) {
+	var sentence = "", safetyCounter, attempts = 0;;
+	while(!sentence.toUpperCase().includes(topic.toUpperCase()) || !sentence.includes("</s>") || invalidSentence(sentence)) {
 		sentence = "";
 		safetyCounter = 0;
 		var choices = getTagList("<s>", list);
@@ -135,6 +137,10 @@ function generateSentence(bigrams, probabilities) {
 				break;
 			}
 			safetyCounter++;
+		}
+		attempts++;
+		if(attempts > 20) {
+			filterCheck = false;
 		}
 		console.log(sentence);
 	}
@@ -159,7 +165,8 @@ function getTagList(tag, list) {
 }
 
 /**
-*
+*	Chooses the next word based on the given choices, probabilities, and chosen randomness.
+*	If no choices are found, the randomness is backed-off until there are available choices.
 */
 function chooseTag(choices, probabilities) {
 	var randomness = randomValue *.00001;
@@ -203,6 +210,22 @@ function isValidTopic(topic) {
 		return 0;
 	}
 	return 1;
+}
+
+/**
+*	Checks sentence for links or language.
+*/
+var filter = ["http", "fuck", "shit"];
+function invalidSentence(sentence) {
+	if(filterCheck == false) {
+		return false;
+	}
+	for(var i = 0; i < filter.length; i++) {
+		if(sentence.toUpperCase().includes(filter[i].toUpperCase())) {
+			return true;
+		}
+	}
+	return false;
 }
 
 /**
