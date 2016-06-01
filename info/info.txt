@@ -1,6 +1,6 @@
-nerp
-nerp
-nerp
+null
+null
+null
 data
 topics
 sentences
