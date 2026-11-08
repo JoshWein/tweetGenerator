@@ -1,0 +1,10 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "api/sentences.js": {
+      "includeFiles": "data/tweets.txt.gz",
+      "memory": 1024,
+      "maxDuration": 15
+    }
+  }
+}
