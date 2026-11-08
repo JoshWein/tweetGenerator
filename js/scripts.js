@@ -8,13 +8,13 @@ function start() {
 		switchView();
 		updateStatus("Getting sentences...");
 		$.ajax({
-			url: "scripts/getSentences.php",
+			url: "api/sentences",
 			type: "GET",
+			dataType: "json",
 			data: {
 				topic: topic
-			}, success:function(data) {
-				var sentences = jQuery.parseJSON(data);	
-				if(sentences[0][0] != "error") {
+			}, success:function(sentences) {
+				if(sentences.length && sentences[0][0] != "error") {
 					updateStatus("Received " + sentences.length + " sentences...");
 					parseSentences(sentences);					
 				} else {
@@ -24,6 +24,9 @@ function start() {
 						newTopic();
 					});
 				}
+			}, error:function() {
+				updateStatus("Couldn't reach the tweet database, try again.");
+				$("#statusSection").delay(5000).fadeOut(200, newTopic);
 			}
 		});
 	} else {
@@ -121,7 +124,8 @@ function generateSentence(bigrams, probabilities) {
 	updateStatus("Generating sentence...");
 	var list = Object.keys(bigrams);
 	console.log(list);
-	var sentence = "", safetyCounter, attempts = 0;;
+	var sentence = "", safetyCounter, attempts = 0;
+	filterCheck = true;
 	while(!sentence.toUpperCase().includes(topic.toUpperCase()) || !sentence.includes("</s>") || invalidSentence(sentence)) {
 		sentence = "";
 		safetyCounter = 0;
@@ -142,9 +146,18 @@ function generateSentence(bigrams, probabilities) {
 		if(attempts > 20) {
 			filterCheck = false;
 		}
+		// Give up instead of hanging the tab when the topic never shows up.
+		if(attempts > 500) {
+			break;
+		}
 		console.log(sentence);
 	}
 	sentence = sentence.replace("</s>", "");
+	if(!sentence.toUpperCase().includes(topic.toUpperCase())) {
+		updateStatus("Couldn't build a sentence for that topic, try another.");
+		$("#statusSection").delay(5000).fadeOut(200, newTopic);
+		return;
+	}
 	showSentence(sentence);	
 }
 
@@ -255,7 +268,7 @@ function switchView() {
 function showSentence(sentence) {
 	$("#buttons").hide();
 	$("#sentenceSection").show();
-	$("#sentence").html(sentence);
+	$("#sentence").text(sentence);
 	$("#sentence").delay(currentStatus * 800).fadeIn(3000, function() {
 		$("#buttons").show();
 	});
