@@ -51,7 +51,7 @@ def fix_encoding(text):
         except UnicodeDecodeError:
             return m.group(0)
 
-    text = re.sub("[\xc2-\xf4][\x80-\xbf]+", redecode, text)
+    text = re.sub("[\xc2-\xdf][\x80-\xbf]|[\xe0-\xef][\x80-\xbf]{2}|[\xf0-\xf4][\x80-\xbf]{3}", redecode, text)
     return text.replace("\ufffd", " ")
 
 
