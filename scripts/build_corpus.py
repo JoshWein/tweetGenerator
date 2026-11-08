@@ -14,6 +14,7 @@ import gzip
 import html
 import io
 import os
+import re
 import sys
 import urllib.request
 import zipfile
@@ -41,8 +42,21 @@ def keep(text):
     return not ("RT " in text or "http" in text or "www." in text or "@" in text)
 
 
+def fix_encoding(text):
+    # The CSV is mostly latin-1, but some tweets are UTF-8 bytes read as
+    # latin-1 ("ï¿½", "â€™"). Re-decode those, then drop replacement chars.
+    def redecode(m):
+        try:
+            return m.group(0).encode("latin-1").decode("utf-8")
+        except UnicodeDecodeError:
+            return m.group(0)
+
+    text = re.sub("[\xc2-\xdf][\x80-\xbf]|[\xe0-\xef][\x80-\xbf]{2}|[\xf0-\xf4][\x80-\xbf]{3}", redecode, text)
+    return text.replace("\ufffd", " ")
+
+
 def clean(text):
-    text = html.unescape(text).replace('"', "")
+    text = html.unescape(fix_encoding(text)).replace('"', "")
     return " ".join(text.split())
 
 
