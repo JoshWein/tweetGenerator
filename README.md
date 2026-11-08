@@ -12,7 +12,8 @@ Originally hosted on OpenShift (rhcloud, shut down in 2017) with a MySQL backend
 ## Files
 * Report.pdf - Written report for assignment.
 * index.html - Main webpage for application.
-* js/scripts.js - Contains all the main scripts for generating the sentences.
+* js/generator.js - N-gram language model (bigram, trigram or 4-gram with backoff), temperature sampling, and best-of-N candidate selection with length, topic and originality checks.
+* js/scripts.js - Page logic and the Advanced options controls.
 * api/sentences.js - Serverless function that returns the tweets containing a topic.
 * scripts/build_corpus.py - Builds data/tweets.txt.gz from Sentiment140.
 * scripts/getSentences.php - Original (retired) backend script that responding to topic requests and returns the matching list of sentences.

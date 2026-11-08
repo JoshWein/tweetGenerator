@@ -1,208 +1,107 @@
-var topic, randomValue = 0.0005;
+var topic, sentenceCache = {};
+
+var ORDER_NAMES = { 2: "bigram", 3: "trigram", 4: "4-gram" };
+
+/** Reads the controls into generator options. */
+function readOptions() {
+	var originality = $("#originality").val();
+	var minWords = clampInt($("#minWords").val(), 1, 60, 4);
+	var maxWords = clampInt($("#maxWords").val(), 2, 80, 30);
+	if (maxWords <= minWords) maxWords = minWords + 1;
+	return {
+		order: clampInt($("#order").val(), 2, 4, 3),
+		temperature: clampInt($("#temperature").val(), 10, 200, 100) / 100,
+		backoff: $("#backoff").is(":checked"),
+		candidates: clampInt($("#candidates").val(), 1, 500, 100),
+		minWords: minWords,
+		maxWords: maxWords,
+		originality: originality === "any" || originality === "exact" ? originality : parseInt(originality, 10),
+		filter: $("#filter").is(":checked"),
+		showAlternates: $("#showAlternates").is(":checked")
+	};
+}
+
+function clampInt(value, min, max, fallback) {
+	var n = parseInt(value, 10);
+	if (isNaN(n)) return fallback;
+	return Math.min(max, Math.max(min, n));
+}
+
 /**
 *	Starting routine for generating a random sentence
 */
-function start() {	
-	topic = $("#topicText").val();	
-	if(isValidTopic(topic)) {
-		switchView();
-		updateStatus("Getting sentences...");
-		$.ajax({
-			url: "api/sentences",
-			type: "GET",
-			dataType: "json",
-			data: {
-				topic: topic
-			}, success:function(sentences) {
-				if(sentences.length && sentences[0][0] != "error") {
-					updateStatus("Received " + sentences.length + " sentences...");
-					parseSentences(sentences);					
-				} else {
-					updateStatus("No sentences found, try another topic.");
-					$("#statusSection").delay(5000).fadeOut(200, function() {
-						console.log("tick");
-						newTopic();
-					});
-				}
-			}, error:function() {
-				updateStatus("Couldn't reach the tweet database, try again.");
-				$("#statusSection").delay(5000).fadeOut(200, newTopic);
-			}
-		});
-	} else {
+function start() {
+	topic = $("#topicText").val().trim();
+	if(!isValidTopic(topic)) {
 		console.log("Invalid entry");
-	}
-}
-
-/**
-*	Parses all of the sentences, removing empty tokens and appending sentence tags to the ends of each sentence
-*	@param	{String[]}	sentences	Nested array of sentences
-*/
-function parseSentences(sentences) {
-	updateStatus("Parsing sentences...");
-	for(var i = 0; i < sentences.length; i++) {
-		var sentence = sentences[i][0].split(" ");
-		sentences[i][0] = "<s> ";
-		for(var j = 0; j < sentence.length; j++) {
-			if(sentence[j].trim() != "")
-				sentences[i][0] = sentences[i][0].concat(sentence[j].trim() + " ");		
-		}
-		sentences[i][0] = sentences[i][0].concat("</s>");
-	}
-	createLanguageModels(sentences);
-}
-
-/**
-*	@param	{String[]}	sentences	Nested array of sentences
-*/
-function createLanguageModels(sentences) {
-	updateStatus("Generating language models...");
-	var unigramLanguageModel = 	{ },
-		bigramLanguageModel	 =	{ };
-	for(var i = 0; i < sentences.length; i++) {
-		var sentence = sentences[i][0].split(" ");
-		var j;
-		for(j = 0; j < sentence.length - 1; j++) {
-			var firstToken = sentence[j];
-			if(firstToken != "") {
-				if(isNaN(unigramLanguageModel[firstToken])) {
-					unigramLanguageModel[firstToken] = 1;
-				} else {
-					unigramLanguageModel[firstToken] = unigramLanguageModel[firstToken] + 1;
-				}	
-				if(sentence[j+1] != "") {
-					var key = firstToken + " " + sentence[j + 1];
-					if(key != " ") {
-						if(isNaN(bigramLanguageModel[key])) {
-							bigramLanguageModel[key] = 1;
-						} else {
-							bigramLanguageModel[key] = bigramLanguageModel[key] + 1;
-						}	
-					}
-				}
-			}
-		}
-		if(isNaN(unigramLanguageModel[sentence[j]])) {
-			unigramLanguageModel[sentence[j]] = 1;
-		} else {
-			unigramLanguageModel[sentence[j]] = unigramLanguageModel[sentence[j]] + 1;
-		}	
-	}
-	keysSorted = Object.keys(unigramLanguageModel).sort(function(a,b){return unigramLanguageModel[a]-unigramLanguageModel[b]});
-	console.log(keysSorted); 
-	console.log(unigramLanguageModel);
-	console.log(bigramLanguageModel);
-	updateStatus("Generated " + Object.keys(unigramLanguageModel).length + " unique unigrams");
-	updateStatus("Generated " + Object.keys(bigramLanguageModel).length + " unique bigrams");
-	generateProbabilities(unigramLanguageModel, bigramLanguageModel);
-}
-
-/**
-*	Generates MLE probabilities for bigrams to use in sentence generation
-*	@param	{Map<String, Integer>}	unigrams	Map of unigrams to counts
-*	@param	{Map<String, Integer>}	bigrams		Map of bigrams to counts
-*/
-function generateProbabilities(unigrams, bigrams) {
-	var probabilities = {};
-	var bigramKeys =  Object.keys(bigrams);
-	for(var i = 0; i < bigramKeys.length; i++) {
-		// count(bigram) / count(unigram)
-		probabilities[bigramKeys[i]] = (bigrams[bigramKeys[i]] / unigrams[bigramKeys[i].split(" ")[0]]);
-	}
-	console.log(probabilities);
-	generateSentence(bigrams, probabilities)
-}
-
-// Whether or not to filter check the sentence.
-var filterCheck = true;
-
-/**
-*	@param	{Map<String, Integer>}	bigrams		Map of bigrams to counts
-*	@param	{Map<String, Double>}	probabilities
-*/
-function generateSentence(bigrams, probabilities) {
-	updateStatus("Generating sentence...");
-	var list = Object.keys(bigrams);
-	console.log(list);
-	var sentence = "", safetyCounter, attempts = 0;
-	filterCheck = true;
-	while(!sentence.toUpperCase().includes(topic.toUpperCase()) || !sentence.includes("</s>") || invalidSentence(sentence)) {
-		sentence = "";
-		safetyCounter = 0;
-		var choices = getTagList("<s>", list);
-		// console.log(choices);		
-		while(!sentence.includes("</s>")) {
-			sentence += chooseTag(choices, probabilities);
-			// Update choices using the last word in the sentence as a tag
-			var lastWord = sentence.split(" ").splice(-1)[0];
-			choices = getTagList(lastWord, list);
-			// Infinite loop protection
-			if(safetyCounter > 30) {
-				break;
-			}
-			safetyCounter++;
-		}
-		attempts++;
-		if(attempts > 20) {
-			filterCheck = false;
-		}
-		// Give up instead of hanging the tab when the topic never shows up.
-		if(attempts > 500) {
-			break;
-		}
-		console.log(sentence);
-	}
-	sentence = sentence.replace("</s>", "");
-	if(!sentence.toUpperCase().includes(topic.toUpperCase())) {
-		updateStatus("Couldn't build a sentence for that topic, try another.");
-		$("#statusSection").delay(5000).fadeOut(200, newTopic);
 		return;
 	}
-	showSentence(sentence);	
-}
-
-/**
-*	Gets all n grams with a matching first gram
-*	@param	{String}				tag		String to match
-*	@param	{String[]} 	list	List of strings
-*/
-function getTagList(tag, list) {
-	// console.log("Matching for " + tag.trim());
-	var choices = [];
-	for(var i = 0; i < list.length; i++) {
-		if(list[i].split(' ')[0].trim() === tag.trim()) {
-			choices.push(list[i]);
-		}
+	switchView();
+	var key = topic.toLowerCase();
+	if (sentenceCache[key]) {
+		updateStatus("Using " + sentenceCache[key].length + " tweets about \"" + topic + "\"...");
+		generate(sentenceCache[key]);
+		return;
 	}
-	return choices;
-}
-
-/**
-*	Chooses the next word based on the given choices, probabilities, and chosen randomness.
-*	If no choices are found, the randomness is backed-off until there are available choices.
-*/
-function chooseTag(choices, probabilities) {
-	var randomness = randomValue *.00001;
-	var choiceMap = {}, i, j, table = [];
-	while(table.length == 0) {
-		for(var i = 0; i < choices.length; i++) {
-			if(probabilities[choices[i]] > randomness) {
-				choiceMap[choices[i]] = probabilities[choices[i]];
+	updateStatus("Getting sentences...");
+	$.ajax({
+		url: "api/sentences",
+		type: "GET",
+		dataType: "json",
+		data: {
+			topic: topic
+		}, success:function(sentences) {
+			if(sentences.length && sentences[0][0] != "error") {
+				var flat = sentences.map(function (s) { return s[0]; });
+				sentenceCache[key] = flat;
+				updateStatus("Received " + flat.length + " sentences...");
+				generate(flat);
 			} else {
-				// console.log(choices[i]);
-				// console.log(probabilities[choices[i]]);
+				fail("No sentences found, try another topic.");
 			}
+		}, error:function() {
+			fail("Couldn't reach the tweet database, try again.");
 		}
-		// Rejection Sampling 	
-		for (i in choiceMap) {
-			for (j = 0; j < (choiceMap[i] * 10); j++) {
-			  table.push(i);
-			}
+	});
+}
+
+function fail(message) {
+	updateStatus(message);
+	$("#statusSection").delay(5000).fadeOut(200, newTopic);
+}
+
+/**
+*	Builds the language model and generates candidate sentences.
+*	@param	{String[]}	sentences	Tweets containing the topic
+*/
+function generate(sentences) {
+	var opts = readOptions();
+	updateStatus("Generating " + ORDER_NAMES[opts.order] + " language model...");
+	// Let the status paint before the (short) synchronous work.
+	setTimeout(function () {
+		var model = new Generator.Model(sentences, opts.order);
+		updateStatus("Learned " + model.unigrams + " unique words and " + model.ngrams + " unique " + ORDER_NAMES[opts.order] + "s");
+		updateStatus("Generating " + opts.candidates + " candidate sentence" + (opts.candidates == 1 ? "" : "s") + "...");
+		opts.topic = topic;
+		var result = model.generate(opts);
+		var stats = summarize(opts, result);
+		if (!result.sentences.length) {
+			updateStatus("None of the candidates passed: " + stats + ". Try more candidates, more randomness, or a looser originality setting.");
+			$("#statusSection").delay(8000).fadeOut(200, newTopic);
+			return;
 		}
-		randomness *= .1; // to stop infinite loops
-	}
-	var choice = table[Math.floor(Math.random() * table.length)];
-	return choice.replace(choice.split(' ')[0], "");
+		showSentence(result.sentences, opts, stats);
+	}, 50);
+}
+
+function summarize(opts, result) {
+	var r = result.rejected, parts = [result.sentences.length + " of " + opts.candidates + " candidates passed"];
+	if (r.topic) parts.push(r.topic + " missed the topic");
+	if (r.length) parts.push(r.length + (r.length == 1 ? " was" : " were") + " too short or long");
+	if (r.copy) parts.push(r.copy + " copied a real tweet");
+	if (r.filter) parts.push(r.filter + (r.filter == 1 ? " was" : " were") + " filtered");
+	if (r.duplicate) parts.push(r.duplicate + (r.duplicate == 1 ? " was a duplicate" : " were duplicates"));
+	return parts.join(", ");
 }
 
 /**
@@ -212,10 +111,10 @@ function chooseTag(choices, probabilities) {
 */
 function isValidTopic(topic) {
 	// Only accept single words
-	if(topic.split(" ").length > 1) {
+	if(/\s/.test(topic)) {
 		$("#err").stop().show();
 		$("#err").html("Only one word topics allowed");
-		$("#err").delay(1000).fadeOut(1000);	
+		$("#err").delay(1000).fadeOut(1000);
 		return 0;
 	}
 	// Only accept non-empty words and words shorter than 50 characters
@@ -226,36 +125,21 @@ function isValidTopic(topic) {
 }
 
 /**
-*	Checks sentence for links or language.
-*/
-var filter = ["http", "fuck", "shit"];
-function invalidSentence(sentence) {
-	if(filterCheck == false) {
-		return false;
-	}
-	for(var i = 0; i < filter.length; i++) {
-		if(sentence.toUpperCase().includes(filter[i].toUpperCase())) {
-			return true;
-		}
-	}
-	return false;
-}
-
-/**
 *	Updates status text on web page with fading animations
 *	@param	{String}	text	Text to change to
 */
 var currentStatus = 0;
 function updateStatus(text) {
-	var str = "status" + currentStatus++;
-	console.log("Status: " + text);	
-	$("#status" + currentStatus).html(text);
-	$("#status" + currentStatus).delay(currentStatus * 550).fadeIn(2700);
+	console.log("Status: " + text);
+	var el = $("#status" + Math.min(currentStatus, 7));
+	currentStatus++;
+	el.text(text);
+	el.stop(true, true).delay(currentStatus * 150).fadeIn(600);
 }
 
 // Submits word on enter key press
 $("#topicText").bind('keyup', function(event) {
-	if(event.keyCode == 13){ 
+	if(event.keyCode == 13){
 		start();
 	}
 });
@@ -265,11 +149,17 @@ function switchView() {
 	$("#statusSection").fadeIn(100);
 }
 
-function showSentence(sentence) {
+function showSentence(sentences, opts, stats) {
 	$("#buttons").hide();
 	$("#sentenceSection").show();
-	$("#sentence").text(sentence);
-	$("#sentence").delay(currentStatus * 800).fadeIn(3000, function() {
+	$("#sentence").text(sentences[0].text);
+	var list = $("#alternates").empty().hide();
+	if (opts.showAlternates && sentences.length > 1) {
+		sentences.slice(1, 6).forEach(function (s) { list.append($("<li>").text(s.text)); });
+	}
+	$("#stats").text(stats + ".");
+	$("#sentence").delay(currentStatus * 200).fadeIn(800, function() {
+		if (list.children().length) list.fadeIn(400);
 		$("#buttons").show();
 	});
 }
@@ -286,11 +176,11 @@ function newTopic() {
 
 function reset() {
 	$("#statusSection").hide();
-	$("#sentence").html("");
-	$("#sentence").hide();
+	$("#sentence").text("").hide();
+	$("#alternates").empty().hide();
+	$("#stats").text("");
 	for(var i = 0; i < 8; i++) {
-		$("#status" + i).hide();
-		$("#status" + i).html("");
+		$("#status" + i).stop(true, true).hide().text("");
 	}
 	currentStatus = 0;
 	$("#buttons").hide();
